@@ -3,6 +3,7 @@
 #### Custom YoloV5 database creation with custom classes support
 
 Based on **PyCOCOtools API** and **COCO database**
+
 <img src="https://cocodataset.org/images/coco-logo.png" height="100" />
 <img src="https://miro.medium.com/max/1400/1*bSLNlG7crv-p-m4LVYYk3Q.png" height="100" />
 
@@ -17,7 +18,10 @@ This project was meant to be used for **YoloV5** database creation, but you can 
 #### Example
 Call coco2yolo class with desired arguments
 
-In this example, our data model has a custom classes and the following classes indexes apply in labels: `0: Face mask, 1: car, 2: person, 3: bicycle`
+In this example, our data model has a custom classes and the following classes indexes apply in labels: 
+
+`0: Face mask, 1: car, 2: person, 3: bicycle`
+
 ```py
 from coco2yolo import coco2yolo
 
