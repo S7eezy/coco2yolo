@@ -15,7 +15,12 @@ This project was meant to be used for **YoloV5** database creation, but you can 
 
 # Usage
 
-#### Example
+You can use `example.py` and fit class arguments to your project, or import the class in your python project `from coco2yolo import coco2yolo
+`.
+
+**If you don't have any COCO Annotation file** (instance_train2017.json)**, the program will download it automagically and use instance_train2017.json**
+
+# Example
 Call coco2yolo class with desired arguments
 
 In this example, our data model has a custom classes and the following classes indexes apply in labels: 
@@ -45,7 +50,11 @@ coco2yolo(
 (str)  OUTPUT_DIRECTORY      : path to output directory
 (bool) CONVERT_YOLO          : convert bboxes to YOLOv5 format (from pixels location to image ratio location)
 
-Important note : no label will be generated if you dont export to YoloV5 Format
+Important notes :
+  - no label will be generated if you dont export to YoloV5 Format
+  - if you don't have any COCO Annotation file (instance_train2017.json)
+    -> the program will download it automagically and use instance_train2017.json
+    -> the downloaded file location and name will be set by COCO_ANNOTATIONS argument
 ```
 
 #### Output
