@@ -4,15 +4,6 @@ __version__ = '1.0'
 pyCOCOtools API manipulation for YOLOv5 custom dataset generation
 """
 
-
-"""
-
-TODO:
-debug index self.coco_cat_ids
-remove debug section with bounding boxes
-
-"""
-
 from pycocotools.coco import COCO
 import numpy as np
 from PIL import Image
@@ -21,8 +12,6 @@ from zipfile import ZipFile
 from tqdm import tqdm
 import os
 import random
-
-
 import cv2
 
 """

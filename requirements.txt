@@ -3,3 +3,4 @@ pillow
 requests
 pycocotools
 tqdm
+opencv-python
