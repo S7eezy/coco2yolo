@@ -1,0 +1,8 @@
+from coco2yolo import coco2yolo
+
+if __name__ == "__main__":
+    coco2yolo(COCO_CATEGORIES_QUERY=['car', 'person', 'bicycle'],
+              COCO_ANNOTATIONS="instances_train2017.json",
+              NUM_SAMPLES=1500,
+              OUTPUT_DIRECTORY="./output",
+              CONVERT_YOLO=True)
