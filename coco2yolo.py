@@ -20,16 +20,17 @@ COCO Categories list
 
 
 class coco2yolo:
-    def __init__(self, COCO_CATEGORIES_QUERY: list, COCO_ANNOTATIONS="instances_train2017.json",
+    def __init__(self, COCO_CATEGORIES_QUERY, CUSTOM_DATASET=False, COCO_ANNOTATIONS="instances_train2017.json",
                  NUM_SAMPLES=1500, OUTPUT_DIRECTORY="./output", CONVERT_YOLO=True):
         """
         Download any amount of random COCO images within specific categories.
 
-        :param COCO_CATEGORIES_QUERY: List of COCO categories to download (put abstract category to artificially increment cat_id index in your model)
-        :param COCO_ANNOTATIONS: Path to COCO annotation json
-        :param NUM_SAMPLES: Number of images to download per category
-        :param OUTPUT_DIRECTORY: Path to output directory
-        :param CONVERT_YOLO: Convert bboxes to YOLOv5 format
+        :param COCO_CATEGORIES_QUERY: (list) COCO categories to download (put abstract category to artificially increment cat_id index in your model)
+        :param CUSTOM_DATASET: (bool) toggle custom classes indexes. Label indexes will be based on COCO_CATEGORIES_QUERY indexes
+        :param COCO_ANNOTATIONS: (str) path to COCO annotation json
+        :param NUM_SAMPLES: (int) number of images to download per category
+        :param OUTPUT_DIRECTORY: (str) path to output directory
+        :param CONVERT_YOLO: (bool) convert bboxes to YOLOv5 format
         """
         try:
             self.annotations = COCO(annotation_file=COCO_ANNOTATIONS)
@@ -43,6 +44,14 @@ class coco2yolo:
         if len(self.categories_query) < 1:
             exit("---------------------------------\nINVALID COCO_CATEGORIES_QUERY\n\nCorrect example : coco2yolo(COCO_CATEGORIES_QUERY=['car', 'handspinner', 'truck'])\n---------------------------------")
         self.convert_yolo = CONVERT_YOLO
+        self.custom_dataset = CUSTOM_DATASET
+        self.categories_query_ids = []
+        if self.custom_dataset:
+            for cat in self.categories_query:
+                if cat in self.categories_list:
+                    self.categories_query_ids.append(self.getCatId(catName=cat))
+                else:
+                    self.categories_query_ids.append(None)
 
         self.getCatIds()
 
@@ -130,6 +139,7 @@ class coco2yolo:
                     """
                     if self.convert_yolo:
                         self.Convert_YOLO(image=image, img_id=im, query_id=query_id, fp=os.path.join(self.output_path, self.getCatName(query_id), "images", f"{im}.jpg"))
+
                     del image
                     pbar.update(1)
                 else:
@@ -152,7 +162,8 @@ class coco2yolo:
         annotations = self.annotations.loadAnns(ann_ids)
 
         image_data = []
-        image_p = cv2.imread(fp)
+        if debug:
+            image_p = cv2.imread(fp)
         imgHeight, imgWidth, _ = image_p.shape
         for ann in annotations:
             x = int(ann['bbox'][0])
@@ -162,7 +173,7 @@ class coco2yolo:
 
             if debug:
                 cv2.rectangle(image_p, (x, y), (x+w, y+h), (0,100,255), 1)
-                cv2.putText(image_p, self.getCatName(ann["category_id"]), (x + 2, y + 6), 0, 1e-3 * imgHeight, (255, 255, 0), 2 // 3)
+                cv2.putText(image_p, f"{ann['category_id']} {self.getCatName(ann['category_id'])}", (x + 2, y + 6), 0, 1e-3 * imgHeight, (255, 255, 0), 2 // 3)
             if ann["category_id"]:
                 """
                 Extract coordinates from a single annotation
@@ -188,7 +199,12 @@ class coco2yolo:
                 Find the corresponding model category ID and save one bounding box
                 """
                 category_id = ann["category_id"]
-                image_data.append([category_id, float(x_center), float(y_center), float(w), float(h)])
+                if not self.custom_dataset:
+                    image_data.append([category_id, float(x_center), float(y_center), float(w), float(h)])
+                else:
+                    if category_id in self.categories_query_ids:
+                        image_data.append([self.categories_query_ids.index(category_id), float(x_center), float(y_center), float(w), float(h)])
+
         if debug:
             cv2.imshow("SLLT", image_p)
             cv2.waitKey(0)
