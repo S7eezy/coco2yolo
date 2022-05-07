@@ -162,8 +162,7 @@ class coco2yolo:
         annotations = self.annotations.loadAnns(ann_ids)
 
         image_data = []
-        if debug:
-            image_p = cv2.imread(fp)
+        image_p = cv2.imread(fp)
         imgHeight, imgWidth, _ = image_p.shape
         for ann in annotations:
             x = int(ann['bbox'][0])
