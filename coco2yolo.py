@@ -169,7 +169,7 @@ class coco2yolo:
                     sampling = False
             pbar.close()
 
-    def Convert_YOLO(self, image, img_id, query_id, fp, debug=False):
+    def Convert_YOLO(self, image, img_id, fp):
         """
         Convert COCO coordinates to YOLO coordinates
         Initial COCO label coordinates : xmin, ymin, w, h (Pixels)
@@ -182,14 +182,6 @@ class coco2yolo:
         image_p = cv2.imread(fp)
         imgHeight, imgWidth, _ = image_p.shape
         for ann in annotations:
-            x = int(ann['bbox'][0])
-            y = int(ann['bbox'][1])
-            w = int(ann['bbox'][2])
-            h = int(ann['bbox'][3])
-
-            if debug:
-                cv2.rectangle(image_p, (x, y), (x+w, y+h), (0,100,255), 1)
-                cv2.putText(image_p, f"{ann['category_id']} {self.getCatName(ann['category_id'])}", (x + 2, y + 6), 0, 1e-3 * imgHeight, (255, 255, 0), 2 // 3)
             if ann["category_id"]:
                 """
                 Extract coordinates from a single annotation
@@ -220,16 +212,6 @@ class coco2yolo:
                 else:
                     if category_id in self.categories_query_ids:
                         image_data.append([self.categories_query_ids.index(category_id), float(x_center), float(y_center), float(w), float(h)])
-
-        if debug:
-            cv2.imshow("SLLT", image_p)
-            cv2.waitKey(0)
-        image_data = np.array(image_data)
-        np.savetxt(
-            os.path.join(self.output_path, self.getCatName(query_id), "labels", f"{img_id}.txt"),
-            image_data,
-            fmt=["%d", "%f", "%f", "%f", "%f"]
-        )
 
 
 if __name__ == "__main__":
