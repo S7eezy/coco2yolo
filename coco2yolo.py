@@ -155,7 +155,7 @@ class coco2yolo:
                     Replace the initial COCO label coordinates (xmin, ymin, xmax, ymax) by YOLO coordinates (x_center, y_center, width, height)
                     """
                     if self.convert_yolo:
-                        self.Convert_YOLO(image=image, img_id=im, query_id=query_id, fp=os.path.join(self.output_path, self.getCatName(query_id), "images", f"{im}.jpg"))
+                        self.Convert_YOLO(image=image, img_id=im, fp=os.path.join(self.output_path, self.getCatName(query_id), "images", f"{im}.jpg"))
 
                     del image
                     pbar.update(1)
