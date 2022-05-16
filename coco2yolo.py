@@ -32,20 +32,36 @@ class coco2yolo:
         :param OUTPUT_DIRECTORY: (str) path to output directory
         :param CONVERT_YOLO: (bool) convert bboxes to YOLOv5 format
         """
-        try:
-            self.annotations = COCO(annotation_file=COCO_ANNOTATIONS)
-        except FileNotFoundError:
-            self.downloadAnnotations(url="http://images.cocodataset.org/annotations/annotations_trainval2017.zip", annotation="instances_train2017", path=COCO_ANNOTATIONS)
 
         self.max_samples = NUM_SAMPLES
         self.output_path = OUTPUT_DIRECTORY
-        self.categories_list = [cat['name'] for cat in self.annotations.loadCats(self.annotations.getCatIds())]
         self.categories_query = COCO_CATEGORIES_QUERY
-        if len(self.categories_query) < 1:
-            exit("---------------------------------\nINVALID COCO_CATEGORIES_QUERY\n\nCorrect example : coco2yolo(COCO_CATEGORIES_QUERY=['car', 'handspinner', 'truck'])\n---------------------------------")
         self.convert_yolo = CONVERT_YOLO
         self.custom_dataset = CUSTOM_DATASET
+        self.coco_annotations = COCO_ANNOTATIONS
+
         self.categories_query_ids = []
+        self.sampled_images = []
+        self.annotations = None
+
+        self.__build__()
+        self.getCatIds()
+
+    def __build__(self):
+        # Check if query isn't empty
+        if len(self.categories_query) < 1:
+            exit("---------------------------------\nINVALID COCO_CATEGORIES_QUERY\n\nCorrect example : coco2yolo(COCO_CATEGORIES_QUERY=['car', 'handspinner', 'truck'])\n---------------------------------")
+
+        # Download Annotations if local file doesn't exist
+        try:
+            self.annotations = COCO(annotation_file=self.coco_annotations)
+        except FileNotFoundError:
+            self.downloadAnnotations(url="http://images.cocodataset.org/annotations/annotations_trainval2017.zip", annotation="instances_train2017", path=self.coco_annotations)
+
+        # Init categories list by name
+        self.categories_list = [cat['name'] for cat in self.annotations.loadCats(self.annotations.getCatIds())]
+
+        # Make query ids list and replace custom classes by None to keep index
         if self.custom_dataset:
             for cat in self.categories_query:
                 if cat in self.categories_list:
@@ -53,11 +69,11 @@ class coco2yolo:
                 else:
                     self.categories_query_ids.append(None)
 
-        self.getCatIds()
-
     def downloadAnnotations(self, url, annotation, path):
+        # Check if path is correct
         if not path.endswith(".json"):
             exit("---------------------------------\nINVALID COCO_ANNOTATIONS\n\nCorrect example : COCO_ANNOTATIONS='path/to/instances_train2017.json'\nIf you want this program to download annotations for you, simply remove COCO_ANNOTATIONS argument to load it as default.\n---------------------------------")
+
         print(f"Annotations not found: Downloading {url}...")
         response = requests.get(url, stream=True)
         total_size_in_bytes = int(response.headers.get('content-length', 0))
@@ -114,7 +130,7 @@ class coco2yolo:
         desc = f"Sampling '{self.getCatName(query_id)}' images"
 
         sampling = True
-        sampled_ids = []
+        num_samples = 0
         with tqdm(total=self.max_samples, desc=desc) as pbar:
             while sampling:
                 """
@@ -126,8 +142,9 @@ class coco2yolo:
                 """
                 Check for duplicate before downloading
                 """
-                if im not in sampled_ids:
-                    sampled_ids.append(img_ids[next_id])
+                if im not in self.sampled_images:
+                    num_samples += 1
+                    self.sampled_images.append(img_ids[next_id])
                     img_info = self.annotations.loadImgs([im])[0]
                     img_url = img_info["coco_url"]
                     image = Image.open(requests.get(img_url, stream=True).raw)
@@ -148,7 +165,7 @@ class coco2yolo:
                 """
                 Check if sampling limitation is reached
                 """
-                if len(sampled_ids) >= self.max_samples:
+                if num_samples >= self.max_samples:
                     sampling = False
             pbar.close()
 
