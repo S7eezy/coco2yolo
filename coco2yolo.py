@@ -155,7 +155,7 @@ class coco2yolo:
                     Replace the initial COCO label coordinates (xmin, ymin, xmax, ymax) by YOLO coordinates (x_center, y_center, width, height)
                     """
                     if self.convert_yolo:
-                        self.Convert_YOLO(image=image, img_id=im, fp=os.path.join(self.output_path, self.getCatName(query_id), "images", f"{im}.jpg"))
+                        self.Convert_YOLO(image=image, query_id=query_id, img_id=im, fp=os.path.join(self.output_path, self.getCatName(query_id), "images", f"{im}.jpg"))
 
                     del image
                     pbar.update(1)
@@ -169,7 +169,7 @@ class coco2yolo:
                     sampling = False
             pbar.close()
 
-    def Convert_YOLO(self, image, img_id, fp):
+    def Convert_YOLO(self, image, query_id, img_id, fp):
         """
         Convert COCO coordinates to YOLO coordinates
         Initial COCO label coordinates : xmin, ymin, w, h (Pixels)
@@ -212,6 +212,13 @@ class coco2yolo:
                 else:
                     if category_id in self.categories_query_ids:
                         image_data.append([self.categories_query_ids.index(category_id), float(x_center), float(y_center), float(w), float(h)])
+
+                image_data = np.array(image_data)
+                np.savetxt(
+                    os.path.join(self.output_path, self.getCatName(query_id), "labels", f"{img_id}.txt"),
+                    image_data,
+                    fmt=["%d", "%f", "%f", "%f", "%f"]
+                )
 
 
 if __name__ == "__main__":
