@@ -13,6 +13,7 @@ from tqdm import tqdm
 import os
 import random
 import cv2
+import json
 
 """
 COCO Categories list
@@ -65,7 +66,12 @@ class coco2yolo:
         if self.custom_dataset:
             for cat in self.categories_query:
                 if cat in self.categories_list:
-                    self.categories_query_ids.append(self.getCatId(catName=cat))
+                    self.categories_query_ids.append({"id": self.annotations.getCatIds(catNms=[cat])[0], "name": cat})
+                    os.makedirs(os.path.join(self.output_path, cat, "labels"),
+                                exist_ok=True)
+                    os.makedirs(os.path.join(self.output_path, cat, "images"),
+                                exist_ok=True)
+
                 else:
                     self.categories_query_ids.append(None)
 
@@ -94,40 +100,27 @@ class coco2yolo:
         os.remove(url.split("/")[-1])
         self.annotations = COCO(annotation_file=path)
 
-    def getCatName(self, catId):
-        return self.annotations.loadCats(self.annotations.getCatIds(catIds=catId))[0]["name"]
-
-    def getCatId(self, catName):
-        return self.annotations.getCatIds(catNms=catName)[0]
-
     def getCatIds(self):
         """
         Select image IDs related to query categories
         """
-        for category in self.categories_query:
-            if category in self.categories_list:
+        for category in self.categories_query_ids:
+            if category:
                 try:
-                    query_id = self.getCatId(category)
-
-                    """
-                    Create ./output/{category} directories
-                    """
-                    os.makedirs(os.path.join(self.output_path, category, "labels"), exist_ok=True)
-                    os.makedirs(os.path.join(self.output_path, category, "images"), exist_ok=True)
-
                     """
                     Start downloading images within a specific category
                     """
-                    img_ids = self.annotations.getImgIds(catIds=self.getCatId(category))
-                    self.COCO_Download(img_ids, query_id)
+                    img_ids = self.annotations.getImgIds(catIds=[category["id"]])
+
+                    self.COCO_Download(img_ids, category)
                 except IndexError:
                     continue
 
-    def COCO_Download(self, img_ids, query_id):
+    def COCO_Download(self, img_ids, category):
         """
         Download {COCO_MAX_SAMPLES} random images within {query_id} category
         """
-        desc = f"Sampling '{self.getCatName(query_id)}' images"
+        desc = f"Sampling '{category['name']}' images"
 
         sampling = True
         num_samples = 0
@@ -149,13 +142,13 @@ class coco2yolo:
                     img_url = img_info["coco_url"]
                     image = Image.open(requests.get(img_url, stream=True).raw)
                     image.save(
-                        fp=os.path.join(self.output_path, self.getCatName(query_id), "images", f"{im}.jpg"))
+                        fp=os.path.join(self.output_path, category['name'], "images", f"{im}.jpg"))
 
                     """
                     Replace the initial COCO label coordinates (xmin, ymin, xmax, ymax) by YOLO coordinates (x_center, y_center, width, height)
                     """
                     if self.convert_yolo:
-                        self.Convert_YOLO(image=image, query_id=query_id, img_id=im, fp=os.path.join(self.output_path, self.getCatName(query_id), "images", f"{im}.jpg"))
+                        self.Convert_YOLO(image=image, query_id=category["name"], img_id=im, fp=os.path.join(self.output_path, category['name'], "images", f"{im}.jpg"))
 
                     del image
                     pbar.update(1)
@@ -210,15 +203,16 @@ class coco2yolo:
                 if not self.custom_dataset:
                     image_data.append([category_id, float(x_center), float(y_center), float(w), float(h)])
                 else:
-                    if category_id in self.categories_query_ids:
-                        image_data.append([self.categories_query_ids.index(category_id), float(x_center), float(y_center), float(w), float(h)])
+                    for q in self.categories_query_ids:
+                        if q and q["id"] == category_id:
+                            image_data.append([self.categories_query_ids.index(q), float(x_center), float(y_center), float(w), float(h)])
 
-                image_data = np.array(image_data)
-                np.savetxt(
-                    os.path.join(self.output_path, self.getCatName(query_id), "labels", f"{img_id}.txt"),
-                    image_data,
-                    fmt=["%d", "%f", "%f", "%f", "%f"]
-                )
+        image_data = np.array(image_data)
+        np.savetxt(
+            os.path.join(self.output_path, query_id, "labels", f"{img_id}.txt"),
+            image_data,
+            fmt=["%d", "%f", "%f", "%f", "%f"]
+        )
 
 
 if __name__ == "__main__":
