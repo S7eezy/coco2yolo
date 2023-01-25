@@ -23,7 +23,7 @@ You can use `example.py` and fit class arguments to your project, or import the 
 # Example
 Call coco2yolo class with desired arguments
 
-In this example, our data model has a custom classes and the following classes indexes apply in labels: 
+In this example, our data model has a custom class and the following classes indexes apply in labels: 
 
 `0: Face mask, 1: car, 2: person, 3: bicycle`
 
